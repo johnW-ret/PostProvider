@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>70abe338-8cf4-42c2-bfac-a5f5ce374c3c</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\PostProvider.Data.Azure\PostProvider.Data.Azure.csproj" />
+    <ProjectReference Include="..\..\PostProvider\PostProvider.csproj" />
+  </ItemGroup>
+
+</Project>
