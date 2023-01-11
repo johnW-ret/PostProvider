@@ -2,7 +2,7 @@
 using Azure.Data.Tables;
 using PostProvider.Models;
 
-namespace PostProvider.Data.Azure;
+namespace PostProvider.Data.Azure.TableStorage;
 
 public class TableRow : ITableEntity
 {

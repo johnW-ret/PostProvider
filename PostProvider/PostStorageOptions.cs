@@ -1,7 +1,6 @@
-﻿namespace PostProvider
+﻿namespace PostProvider;
+
+public class PostStorageOptions
 {
-    public class PostStorageOptions
-    {
-        public Dictionary<string, Type> Implementations { get; set; } = new();
-    }
+    public Dictionary<string, HashSet<(Type, Type)>> Implementations { get; set; } = new();
 }

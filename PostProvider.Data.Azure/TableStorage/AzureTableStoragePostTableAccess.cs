@@ -3,16 +3,17 @@ using Azure.Data.Tables;
 using Microsoft.Extensions.Options;
 using PostProvider.Data.Services;
 using PostProvider.Models;
+using System.Net;
 
-namespace PostProvider.Data.Azure;
+namespace PostProvider.Data.Azure.TableStorage;
 
-public class AzureTableStoragePostAccess : IPostsTableAccess
+public class AzureTableStoragePostTableAccess : IPostsTableAccess
 {
     private readonly TableServiceClient tableServiceClient;
     private readonly TableClient tableClient;
     private readonly TablesOptions tablesOptions;
 
-    public AzureTableStoragePostAccess(
+    public AzureTableStoragePostTableAccess(
         TableServiceClient tableServiceClient,
         IOptions<TablesOptions> options)
     {
@@ -22,12 +23,12 @@ public class AzureTableStoragePostAccess : IPostsTableAccess
         tableClient = tableServiceClient.GetTableClient(tablesOptions.TableName);
     }
 
-    public Task<(int, string)> AddRow(Row row)
+    public Task<TResponse<Row>> AddRow(Row row)
     {
         return tableClient
             .AddEntityAsync((TableRow)row)
-            .ContinueWith(t => new Func<Response, (int, string)>(
-                r => (r.Status, r.ReasonPhrase))
+            .ContinueWith(t => new Func<Response, TResponse<Row>>(
+                r => new(row, (HttpStatusCode)r.Status))
             (t.Result));
     }
 

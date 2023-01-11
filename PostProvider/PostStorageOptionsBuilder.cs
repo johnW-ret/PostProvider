@@ -1,29 +1,24 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using PostProvider.Data.Services;
 
-namespace PostProvider
+namespace PostProvider;
+
+public class PostStorageOptionsBuilder : IPostStorageOptionsBuilderInfrastructure
 {
-    public interface IPostStorageOptionsBuilderInfrastructure
+    private readonly IServiceCollection services;
+    public PostStorageOptions Options { get; private set; } = new();
+
+    public IServiceCollection Services => services;
+
+    public PostStorageOptionsBuilder(IServiceCollection services)
     {
-        void AddImplementation<TImplementation>(string name)
-            where TImplementation : IPostsTableAccess;
+        this.services = services;
     }
 
-    public class PostStorageOptionsBuilder : IPostStorageOptionsBuilderInfrastructure
+    void IPostStorageOptionsBuilderInfrastructure.AddImplementation<TService, TImplementation>(string name)
     {
-        private readonly IServiceCollection services;
-        public PostStorageOptions Options { get; private set; } = new();
+        if (!Options.Implementations.TryGetValue(name, out var typePairs))
+            Options.Implementations.Add(name, typePairs = new());
 
-        public IServiceCollection Services => services;
-
-        public PostStorageOptionsBuilder(IServiceCollection services)
-        {
-            this.services = services;
-        }
-
-        void IPostStorageOptionsBuilderInfrastructure.AddImplementation<TImplementation>(string name)
-        {
-            Options.Implementations.Add(name, typeof(TImplementation));
-        }
+        typePairs.Add((typeof(TService), typeof(TImplementation)));
     }
 }
