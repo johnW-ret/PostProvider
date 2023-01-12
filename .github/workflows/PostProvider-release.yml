@@ -1,0 +1,31 @@
+name: .NET PostProvider Build, Test, and Release
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
+    - name: Restore dependencies
+      run: dotnet restore PostProvider
+    - name: Build
+      run: dotnet build PostProvider --no-restore
+    - name: Test
+      run: dotnet test PostProvider --no-build --verbosity normal
+    - name: Pack
+      run: dotnet pack PostProvider --configuration Release
+    - name: Add GitHub Packages Source
+      run: dotnet nuget add source --username johnW-ret --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/johnW-ret/index.json"
+    - name: Push
+      run: dotnet nuget push "PostProvider/bin/Release/PostProvider.*.nupkg" --source "github"
