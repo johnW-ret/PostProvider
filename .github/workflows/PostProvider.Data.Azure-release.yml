@@ -1,4 +1,4 @@
-name: .NET PostProvider Build, Test, and Release
+name: .NET PostProvider.Data.Azure Build, Test, and Release
 
 on:
   push:
@@ -16,14 +16,14 @@ jobs:
       with:
         dotnet-version: 7.0.x
     - name: Restore dependencies
-      run: dotnet restore PostProvider
+      run: dotnet restore PostProvider.Data.Azure
     - name: Build
-      run: dotnet build PostProvider --no-restore
+      run: dotnet build PostProvider.Data.Azure --no-restore
     - name: Test
-      run: dotnet test PostProvider --no-build --verbosity normal
+      run: dotnet test PostProvider.Data.Azure --no-build --verbosity normal
     - name: Pack
-      run: dotnet pack PostProvider --configuration Release
+      run: dotnet pack PostProvider.Data.Azure --configuration Release
     - name: Add GitHub Packages Source
       run: dotnet nuget add source --username johnW-ret --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/johnW-ret/index.json"
     - name: Push
-      run: dotnet nuget push "PostProvider/bin/Release/PostProvider.*.nupkg" --source "github"
+      run: dotnet nuget push "PostProvider.Data.Azure/bin/Release/PostProvider.Data.Azure.*.nupkg" --source "github"
