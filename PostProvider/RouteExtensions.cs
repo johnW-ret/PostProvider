@@ -12,7 +12,7 @@ public static class RouteExtensions
 {
     private const string DefaultPostRoute = "post";
 
-    public static RouteGroupBuilder MapPostApis(this RouteGroupBuilder group)
+    public static RouteGroupBuilder MapReadOnlyPostApis(this RouteGroupBuilder group)
     {
         group.MapGet("/", async ([FromQuery] string key, IPostsTableAccess tableAccess, IPostClient postClient)
             => await tableAccess.GetRow(key) switch
@@ -25,6 +25,11 @@ public static class RouteExtensions
                 _ => Results.NotFound()
             });
 
+        return group;
+    }
+
+    public static RouteGroupBuilder MapWritePostApis(this RouteGroupBuilder group)
+    {
         group.MapPost("/add", async (
                 [FromBody] Post post,
                 IPostsTableAccess tableAccess,
@@ -46,5 +51,8 @@ public static class RouteExtensions
     public static RouteGroupBuilder MapPostProviderRoutes(
             this IEndpointRouteBuilder routeBuilder,
             string routeName = DefaultPostRoute)
-        => routeBuilder.MapGroup(routeName).MapPostApis();
+        => routeBuilder
+        .MapGroup(routeName)
+        .MapReadOnlyPostApis()
+        .MapWritePostApis();
 }
