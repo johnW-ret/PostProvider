@@ -14,7 +14,7 @@ public static class RouteExtensions
 
     public static RouteGroupBuilder MapReadOnlyPostApis(this RouteGroupBuilder group)
     {
-        group.MapGet("/", async ([FromQuery] string key, IPostsTableAccess tableAccess, IPostClient postClient)
+        group.MapGet("/", async (string key, IPostsTableAccess tableAccess, IPostClient postClient)
             => await tableAccess.GetRow(key) switch
             {
                 Row row => await postClient.GetPost(row.Name) switch
@@ -24,6 +24,24 @@ public static class RouteExtensions
                 },
                 _ => Results.NotFound()
             });
+
+        group.MapGet("/all", async (string? continuationToken, IPostsTableAccess tableAccess, IPostClient postClient)
+            =>
+        {
+            try
+            {
+                return Results.Ok((await tableAccess
+                    .GetRows("PartitionKey ne 'null'", continuationToken))
+                    .Select(async r => await postClient.GetPost(r.Name))
+                    .Select(t => t.Result)
+                    .OfType<Post>()
+                    .OrderByDescending(p => p.CreatedOn));
+            }
+            catch (Exception)
+            {
+                return Results.Problem();
+            }
+        });
 
         return group;
     }
