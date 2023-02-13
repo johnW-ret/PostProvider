@@ -30,19 +30,28 @@ public class AzureBlobStoragePostClient : IPostClient
                         (HttpStatusCode)r.Status))
                 (t.Result.GetRawResponse()));
 
-    public Task<Post?> GetPost(string name)
+    public async Task<Post?> GetPost(string name)
     {
-        var client = blobContainerClient
-            .GetBlobClient(name);
+        try
+        {
+            var client = blobContainerClient
+                .GetBlobClient(name);
 
-        return Task.Run(async () =>
-            (Post?)new Post(
-                client.Uri.ToString(),
-                client.Name,
-                await client
-                    .DownloadContentAsync()
-                    .ContinueWith(downloadResult =>
-                        downloadResult.Result.Value.Content.ToString()
-                )));
+            var post = (Post?)new Post(
+                    client.Uri.ToString(),
+                    client.Name,
+                    (await client.GetPropertiesAsync()).Value.CreatedOn,
+                    await client
+                        .DownloadContentAsync()
+                        .ContinueWith(downloadResult =>
+                            downloadResult.Result.Value.Content.ToString()
+                    ));
+
+            return post;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 }
