@@ -3,6 +3,7 @@ using Azure.Data.Tables;
 using Microsoft.Extensions.Options;
 using PostProvider.Data.Services;
 using PostProvider.Models;
+using System.Linq.Expressions;
 using System.Net;
 
 namespace PostProvider.Data.Azure.TableStorage;
@@ -42,5 +43,17 @@ public class AzureTableStoragePostTableAccess : IPostsTableAccess
             null => null,
             TableRow r => (Row)r
         });
+    }
+
+    public Task<List<Row>> GetRows(string filter, string? continuationToken = null)
+    {
+        return Task.Run(() => tableClient
+            .QueryAsync<TableRow>(filter)
+            .AsPages(continuationToken)
+            .ToBlockingEnumerable()
+            .FirstOrDefault()?
+            .Values
+            .Select(tableRow => (Row)tableRow)
+            .ToList() ?? new List<Row>());
     }
 }
