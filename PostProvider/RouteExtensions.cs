@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using PostProvider.Data;
 using PostProvider.Data.Services;
 using PostProvider.Models;
 using System.Net;
@@ -25,8 +26,7 @@ public static class RouteExtensions
                 _ => Results.NotFound()
             });
 
-        group.MapGet("/all", async (string? continuationToken, IPostsTableAccess tableAccess, IPostClient postClient)
-            =>
+        group.MapGet("/all", async (string? continuationToken, IPostsTableAccess tableAccess, IPostClient postClient) =>
         {
             try
             {
@@ -43,16 +43,30 @@ public static class RouteExtensions
             }
         });
 
+        group.MapGet("/metadata", async (string? continuationToken, IPostsTableAccess tableAccess, IPostClient postClient) =>
+        {
+            try
+            {
+                return Results.Ok((await tableAccess
+                    .GetRows("PartitionKey ne 'null'", continuationToken))
+                    .OrderByDescending(r => r.CreatedOn));
+            }
+            catch (Exception)
+            {
+                return Results.Problem();
+            }
+        });
+
         return group;
     }
 
     public static RouteGroupBuilder MapWritePostApis(this RouteGroupBuilder group)
     {
-        group.MapPost("/add", async (
-                [FromBody] Post post,
+        group.MapPost("/", async (
+                [FromBody] PostInputs postInputs,
                 IPostsTableAccess tableAccess,
                 IPostClient postClient)
-            => await postClient.CreatePost(post) switch
+            => await postClient.CreatePost(postInputs) switch
             {
                 ({ Url: not null, Name: not null } newPost, HttpStatusCode.Created)
                     => await tableAccess.AddRow(new(newPost.Url, newPost.Name)) switch
@@ -62,6 +76,20 @@ public static class RouteExtensions
                     },
                 (_, var code) => Results.Problem($"{(int)code} {code}")
             });
+
+        group.MapDelete("/", async (
+            string key,
+            IPostsTableAccess tableAccess,
+            IPostClient postClient)
+        => await postClient.DeletePost(key) switch
+        {
+            true => await tableAccess.DeleteRow(key) switch
+            {
+                HttpStatusCode.NoContent => Results.NoContent(),
+                var code => Results.Problem($"{(int)code} {code}")
+            },
+            false => Results.Problem()
+        });
 
         return group;
     }

@@ -7,7 +7,7 @@ namespace PostProvider.Data.Azure.TableStorage;
 public class TableRow : ITableEntity
 {
     public TableRow()
-    { 
+    {
         PartitionKey = CreatedOn.Year.ToString();
     }
 
@@ -17,7 +17,7 @@ public class TableRow : ITableEntity
         Name = name ?? throw new ArgumentNullException(nameof(name));
         CreatedOn = createdOn;
 
-        PartitionKey = CreatedOn.Year.ToString();
+        PartitionKey = GetPartitionAndRowKey(name).PartitionKey;
         ETag = new(Timestamp.GetHashCode().ToString());
     }
 
@@ -44,4 +44,9 @@ public class TableRow : ITableEntity
             CreatedOn = tableRow.CreatedOn
         };
     }
+
+    public static TableRowKeys GetPartitionAndRowKey(string key)
+        => new(key.FirstOrDefault().ToString(), key);
 }
+
+public record struct TableRowKeys(string PartitionKey, string RowKey);
