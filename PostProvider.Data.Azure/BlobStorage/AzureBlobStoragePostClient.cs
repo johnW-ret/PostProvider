@@ -21,14 +21,18 @@ public class AzureBlobStoragePostClient : IPostClient
         blobContainerClient = blobServiceClient.GetBlobContainerClient(blobOptions.ContainerName);
     }
 
-    public Task<TResponse<Post>> CreatePost(Post post)
+    public Task<TResponse<Post>> CreatePost(PostInputs postInputs)
         => blobContainerClient
-                .UploadBlobAsync(post.Name, new BinaryData(post.Content).ToStream())
-                .ContinueWith(t => new Func<Response, TResponse<Post>>(
-                    r => new(
-                        post with { Url = blobContainerClient.Uri.ToString() + "/" + post.Name },
-                        (HttpStatusCode)r.Status))
-                (t.Result.GetRawResponse()));
+            .UploadBlobAsync(postInputs.Name, new BinaryData(postInputs.Content).ToStream())
+            .ContinueWith(t => new Func<Response, TResponse<Post>>(
+                r => new(
+                    Value: new(
+                        url: blobContainerClient.Uri.ToString() + "/" + postInputs.Name,
+                        name: postInputs.Name,
+                        createdOn: DateTimeOffset.Now,
+                        content: postInputs.Content),
+                    StatusCode: (HttpStatusCode)r.Status))
+            (t.Result.GetRawResponse()));
 
     public async Task<Post?> GetPost(string name)
     {

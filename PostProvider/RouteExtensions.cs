@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using PostProvider.Data;
 using PostProvider.Data.Services;
 using PostProvider.Models;
 using System.Net;
@@ -49,10 +50,10 @@ public static class RouteExtensions
     public static RouteGroupBuilder MapWritePostApis(this RouteGroupBuilder group)
     {
         group.MapPost("/add", async (
-                [FromBody] Post post,
+                [FromBody] PostInputs postInputs,
                 IPostsTableAccess tableAccess,
                 IPostClient postClient)
-            => await postClient.CreatePost(post) switch
+            => await postClient.CreatePost(postInputs) switch
             {
                 ({ Url: not null, Name: not null } newPost, HttpStatusCode.Created)
                     => await tableAccess.AddRow(new(newPost.Url, newPost.Name)) switch
