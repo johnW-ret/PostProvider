@@ -33,6 +33,14 @@ public class AzureTableStoragePostTableAccess : IPostsTableAccess
             (t.Result));
     }
 
+    public async Task<HttpStatusCode> DeleteRow(string key)
+    {
+        var (partitionKey, rowKey) = TableRow.GetPartitionAndRowKey(key);
+        var response = await tableClient.DeleteEntityAsync(partitionKey, rowKey);
+
+        return (HttpStatusCode)response.Status;
+    }
+
     public Task<Row?> GetRow(string name)
     {
         return Task.Run(() => tableClient

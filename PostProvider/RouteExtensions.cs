@@ -64,6 +64,20 @@ public static class RouteExtensions
                 (_, var code) => Results.Problem($"{(int)code} {code}")
             });
 
+        group.MapDelete("/", async (
+            string key,
+            IPostsTableAccess tableAccess,
+            IPostClient postClient)
+        => await postClient.DeletePost(key) switch
+        {
+            true => await tableAccess.DeleteRow(key) switch
+            {
+                HttpStatusCode.NoContent => Results.NoContent(),
+                var code => Results.Problem($"{(int)code} {code}")
+            },
+            false => Results.Problem()
+        });
+
         return group;
     }
 

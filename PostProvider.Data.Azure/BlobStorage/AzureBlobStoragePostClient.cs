@@ -34,6 +34,18 @@ public class AzureBlobStoragePostClient : IPostClient
                     StatusCode: (HttpStatusCode)r.Status))
             (t.Result.GetRawResponse()));
 
+    public async Task<bool> DeletePost(string key)
+    {
+        try
+        {
+            return await blobContainerClient.DeleteBlobIfExistsAsync(key);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
     public async Task<Post?> GetPost(string name)
     {
         try
