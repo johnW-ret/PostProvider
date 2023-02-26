@@ -26,8 +26,7 @@ public static class RouteExtensions
                 _ => Results.NotFound()
             });
 
-        group.MapGet("/all", async (string? continuationToken, IPostsTableAccess tableAccess, IPostClient postClient)
-            =>
+        group.MapGet("/all", async (string? continuationToken, IPostsTableAccess tableAccess, IPostClient postClient) =>
         {
             try
             {
@@ -37,6 +36,20 @@ public static class RouteExtensions
                     .Select(t => t.Result)
                     .OfType<Post>()
                     .OrderByDescending(p => p.CreatedOn));
+            }
+            catch (Exception)
+            {
+                return Results.Problem();
+            }
+        });
+
+        group.MapGet("/metadata", async (string? continuationToken, IPostsTableAccess tableAccess, IPostClient postClient) =>
+        {
+            try
+            {
+                return Results.Ok((await tableAccess
+                    .GetRows("PartitionKey ne 'null'", continuationToken))
+                    .OrderByDescending(r => r.CreatedOn));
             }
             catch (Exception)
             {
