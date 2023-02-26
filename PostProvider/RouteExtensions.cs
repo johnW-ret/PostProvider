@@ -49,7 +49,7 @@ public static class RouteExtensions
 
     public static RouteGroupBuilder MapWritePostApis(this RouteGroupBuilder group)
     {
-        group.MapPost("/add", async (
+        group.MapPost("/", async (
                 [FromBody] PostInputs postInputs,
                 IPostsTableAccess tableAccess,
                 IPostClient postClient)
