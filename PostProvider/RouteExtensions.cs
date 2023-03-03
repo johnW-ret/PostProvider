@@ -68,10 +68,10 @@ public static class RouteExtensions
                 IPostClient postClient)
             => await postClient.CreatePost(postInputs) switch
             {
-                ({ Url: not null, Name: not null } newPost, HttpStatusCode.Created)
-                    => await tableAccess.AddRow(new(newPost.Url, newPost.Name)) switch
+                ({ Url: not null, Name: string name } newPost, HttpStatusCode.Created)
+                    => await tableAccess.AddRow(new(newPost.Url, name)) switch
                     {
-                        (not null, HttpStatusCode.NoContent) => Results.NoContent(),
+                        (not null, HttpStatusCode.NoContent) => Results.Created($"/{name}", null),
                         (_, var code) => Results.Problem($"{(int)code} {code}")
                     },
                 (_, var code) => Results.Problem($"{(int)code} {code}")
