@@ -77,6 +77,20 @@ public static class RouteExtensions
                 (_, var code) => Results.Problem($"{(int)code} {code}")
             });
 
+        group.MapPut("/", async (
+                [FromBody] PostInputs postInputs,
+                IPostsTableAccess tableAccess,
+                IPostClient postClient)
+            => await tableAccess.GetRow(postInputs.Name) switch
+            {
+                Row row => (await postClient.PutPost(postInputs)).StatusCode switch
+                {
+                    HttpStatusCode.NoContent or HttpStatusCode.Created => Results.NoContent(),
+                    var code => Results.Problem($"{(int)code} {code}")
+                },
+                _ => Results.NotFound()
+            });
+
         group.MapDelete("/", async (
             string key,
             IPostsTableAccess tableAccess,

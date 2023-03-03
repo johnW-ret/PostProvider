@@ -1,5 +1,6 @@
 using Azure;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Options;
 using PostProvider.Data.Services;
 using PostProvider.Models;
@@ -44,6 +45,25 @@ public class AzureBlobStoragePostClient : IPostClient
         {
             return false;
         }
+    }
+
+    public async Task<TResponse<Post>> PutPost(PostInputs postInputs)
+    {
+        var client = blobContainerClient.GetBlobClient(postInputs.Name);
+
+        bool exists = await client.ExistsAsync();
+
+        return await client
+            .UploadAsync(new BinaryData(postInputs.Content).ToStream(), exists)
+            .ContinueWith(t => new Func<Response, TResponse<Post>>(
+                r => new(
+                    Value: new(
+                        url: blobContainerClient.Uri.ToString() + "/" + postInputs.Name,
+                        name: postInputs.Name,
+                        createdOn: DateTimeOffset.Now,
+                        content: postInputs.Content),
+                    StatusCode: (HttpStatusCode)r.Status))
+            (t.Result.GetRawResponse()));
     }
 
     public async Task<Post?> GetPost(string name)
