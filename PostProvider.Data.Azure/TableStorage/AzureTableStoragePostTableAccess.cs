@@ -41,10 +41,10 @@ public class AzureTableStoragePostTableAccess : IPostsTableAccess
         return (HttpStatusCode)response.Status;
     }
 
-    public Task<Row?> GetRow(string name)
+    public Task<Row?> GetRow(string key)
     {
         return Task.Run(() => tableClient
-            .QueryAsync<TableRow>(ent => ent.Name == name)
+            .QueryAsync<TableRow>(ent => ent.Key == key)
             .ToBlockingEnumerable()
             .FirstOrDefault() switch
         {

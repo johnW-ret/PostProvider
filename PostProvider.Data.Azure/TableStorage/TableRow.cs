@@ -11,34 +11,37 @@ public class TableRow : ITableEntity
         PartitionKey = CreatedOn.Year.ToString();
     }
 
-    public TableRow(string url, string name, DateTimeOffset createdOn)
+    public TableRow(string key, string url, string name, DateTimeOffset createdOn)
     {
-        Url = url ?? throw new ArgumentNullException(nameof(url));
-        Name = name ?? throw new ArgumentNullException(nameof(name));
+        Key = key;
+        Url = url;
+        Name = name;
         CreatedOn = createdOn;
 
-        PartitionKey = GetPartitionAndRowKey(name).PartitionKey;
+        PartitionKey = GetPartitionAndRowKey(key).PartitionKey;
         ETag = new(Timestamp.GetHashCode().ToString());
     }
 
+    public string Key { get; set; } = string.Empty;
     public string Url { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public DateTimeOffset CreatedOn { get; set; }
 
     public string PartitionKey { get; set; }
-    public string RowKey { get => Name; set => Name = value; }
+    public string RowKey { get => Key; set => Key = value; }
     public DateTimeOffset? Timestamp { get; set; }
     public ETag ETag { get; set; }
 
     public static explicit operator TableRow(Row row)
     {
-        return new(row.Url, row.Name, row.CreatedOn);
+        return new(row.Key, row.Url, row.Name, row.CreatedOn);
     }
 
     public static implicit operator Row(TableRow tableRow)
     {
         return new()
         {
+            Id = tableRow.Key,
             Url = tableRow.Url,
             Name = tableRow.Name,
             CreatedOn = tableRow.CreatedOn
