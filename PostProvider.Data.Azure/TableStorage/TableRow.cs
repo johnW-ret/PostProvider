@@ -11,9 +11,10 @@ public class TableRow : ITableEntity
         PartitionKey = CreatedOn.Year.ToString();
     }
 
-    public TableRow(string key, string url, string name, DateTimeOffset createdOn)
+    public TableRow(string key, bool isPublished, string url, string name, DateTimeOffset createdOn)
     {
         Key = key;
+        IsPublished = isPublished;
         Url = url;
         Name = name;
         CreatedOn = createdOn;
@@ -23,6 +24,7 @@ public class TableRow : ITableEntity
     }
 
     public string Key { get; set; } = string.Empty;
+    public bool IsPublished { get; set; }
     public string Url { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public DateTimeOffset CreatedOn { get; set; }
@@ -33,20 +35,17 @@ public class TableRow : ITableEntity
     public ETag ETag { get; set; }
 
     public static explicit operator TableRow(Row row)
-    {
-        return new(row.Key, row.Url, row.Name, row.CreatedOn);
-    }
+        => new(row.Key, row.IsPublished, row.Url, row.Name, row.CreatedOn);
 
     public static implicit operator Row(TableRow tableRow)
-    {
-        return new()
+        => new()
         {
             Id = tableRow.Key,
+            IsPublished = tableRow.IsPublished,
             Url = tableRow.Url,
             Name = tableRow.Name,
             CreatedOn = tableRow.CreatedOn
         };
-    }
 
     public static TableRowKeys GetPartitionAndRowKey(string key)
         => new(key.FirstOrDefault().ToString(), key);

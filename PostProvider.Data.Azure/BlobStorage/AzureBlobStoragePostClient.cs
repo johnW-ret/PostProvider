@@ -32,6 +32,7 @@ public class AzureBlobStoragePostClient : IPostClient
             r => new(
                     Value: new(
                         guid,
+                        isPublished: postInputs.IsPublished,
                         url: blobContainerClient.Uri.ToString() + "/" + guid,
                         name: postInputs.Name,
                         createdOn: DateTimeOffset.Now,
@@ -64,6 +65,7 @@ public class AzureBlobStoragePostClient : IPostClient
                 r => new(
                     Value: new(
                         guid: key,
+                        isPublished: postInputs.IsPublished,
                         url: blobContainerClient.Uri.ToString() + "/" + postInputs.Name,
                         name: postInputs.Name,
                         createdOn: DateTimeOffset.Now,
@@ -88,6 +90,7 @@ public class AzureBlobStoragePostClient : IPostClient
 
             var post = (Post?)new Post(
                     guid: key,
+                    isPublished: blob.IsPublished,
                     client.Uri.ToString(),
                     blob.Name,
                     (await client.GetPropertiesAsync()).Value.CreatedOn,

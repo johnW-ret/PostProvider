@@ -13,15 +13,15 @@ public static class RouteExtensions
 {
     private const string DefaultPostRoute = "post";
 
-    public static RouteGroupBuilder MapReadOnlyPostApis(this RouteGroupBuilder group)
+    public static RouteGroupBuilder MapReadOnlyPostApis(this RouteGroupBuilder group, bool isEditor = false)
     {
         group.MapGet("/", async (string key, IPostsTableAccess tableAccess, IPostClient postClient)
             => await tableAccess.GetRow(key) switch
             {
                 Row row => await postClient.GetPost(row.Key) switch
                 {
-                    Post post => Results.Ok(post),
-                    null => Results.Problem(),
+                    { IsPublished: bool p } post when isEditor || p => Results.Ok(post),
+                    _ => Results.Problem(),
                 },
                 _ => Results.NotFound()
             });
@@ -35,6 +35,7 @@ public static class RouteExtensions
                     .Select(async r => await postClient.GetPost(r.Id))
                     .Select(t => t.Result)
                     .OfType<Post>()
+                    .Where(p => isEditor || p.IsPublished)
                     .OrderByDescending(p => p.CreatedOn));
             }
             catch (Exception)
@@ -49,6 +50,7 @@ public static class RouteExtensions
             {
                 return Results.Ok((await tableAccess
                     .GetRows("PartitionKey ne 'null'", continuationToken))
+                    .Where(p => isEditor || p.IsPublished)
                     .OrderByDescending(r => r.CreatedOn));
             }
             catch (Exception)
@@ -60,8 +62,10 @@ public static class RouteExtensions
         return group;
     }
 
-    public static RouteGroupBuilder MapWritePostApis(this RouteGroupBuilder group)
+    public static RouteGroupBuilder MapEditorPostApis(this RouteGroupBuilder group)
     {
+        group.MapReadOnlyPostApis(true);
+
         group.MapPost("/", async (
                 [FromBody] PostInputs postInputs,
                 IPostsTableAccess tableAccess,
@@ -69,7 +73,7 @@ public static class RouteExtensions
             => await postClient.CreatePost(postInputs) switch
             {
                 ({ Url: not null, Name: string name } newPost, HttpStatusCode.Created)
-                    => await tableAccess.AddRow(new(newPost.Guid.ToString(), newPost.Url, name)) switch
+                    => await tableAccess.AddRow(new(newPost.Guid.ToString(), postInputs.IsPublished, newPost.Url, name)) switch
                     {
                         (Row row, HttpStatusCode.NoContent) => Results.Created($"/{row.Id}", null),
                         (_, var code) => Results.Problem($"{(int)code} {code}")
@@ -115,6 +119,5 @@ public static class RouteExtensions
             string routeName = DefaultPostRoute)
         => routeBuilder
         .MapGroup(routeName)
-        .MapReadOnlyPostApis()
-        .MapWritePostApis();
+        .MapEditorPostApis();
 }
