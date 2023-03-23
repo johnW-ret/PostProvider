@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using PostProvider.Data.Services;
 using PostProvider.Models;
 using System.Net;
+using System.Text.Json;
 
 namespace PostProvider.Data.Azure.BlobStorage;
 
@@ -22,17 +23,23 @@ public class AzureBlobStoragePostClient : IPostClient
     }
 
     public Task<TResponse<Post>> CreatePost(PostInputs postInputs)
-        => blobContainerClient
-            .UploadBlobAsync(postInputs.Name, new BinaryData(postInputs.Content).ToStream())
+    {
+        string guid = Guid.NewGuid().ToString();
+
+        return blobContainerClient
+            .UploadBlobAsync(guid, new BinaryData(postInputs).ToStream())
             .ContinueWith(t => new Func<Response, TResponse<Post>>(
-                r => new(
+            r => new(
                     Value: new(
-                        url: blobContainerClient.Uri.ToString() + "/" + postInputs.Name,
+                        guid,
+                        isPublished: postInputs.IsPublished,
+                        url: blobContainerClient.Uri.ToString() + "/" + guid,
                         name: postInputs.Name,
                         createdOn: DateTimeOffset.Now,
                         content: postInputs.Content),
                     StatusCode: (HttpStatusCode)r.Status))
             (t.Result.GetRawResponse()));
+    }
 
     public async Task<bool> DeletePost(string key)
     {
@@ -46,22 +53,48 @@ public class AzureBlobStoragePostClient : IPostClient
         }
     }
 
-    public async Task<Post?> GetPost(string name)
+    public async Task<TResponse<Post>> PutPost(string key, PostInputs postInputs)
+    {
+        var client = blobContainerClient.GetBlobClient(key);
+
+        bool exists = await client.ExistsAsync();
+
+        return await client
+            .UploadAsync(new BinaryData(postInputs).ToStream(), exists)
+            .ContinueWith(t => new Func<Response, TResponse<Post>>(
+                r => new(
+                    Value: new(
+                        guid: key,
+                        isPublished: postInputs.IsPublished,
+                        url: blobContainerClient.Uri.ToString() + "/" + postInputs.Name,
+                        name: postInputs.Name,
+                        createdOn: DateTimeOffset.Now,
+                        content: postInputs.Content),
+                    StatusCode: (HttpStatusCode)r.Status))
+            (t.Result.GetRawResponse()));
+    }
+
+    public async Task<Post?> GetPost(string key)
     {
         try
         {
             var client = blobContainerClient
-                .GetBlobClient(name);
+                .GetBlobClient(key);
+
+            if (await client
+                .DownloadContentAsync()
+                .ContinueWith(downloadResult =>
+                    JsonSerializer.Deserialize<PostInputs>(downloadResult.Result.Value.Content.ToString())
+                ) is not PostInputs blob)
+                return null;
 
             var post = (Post?)new Post(
+                    guid: key,
+                    isPublished: blob.IsPublished,
                     client.Uri.ToString(),
-                    client.Name,
+                    blob.Name,
                     (await client.GetPropertiesAsync()).Value.CreatedOn,
-                    await client
-                        .DownloadContentAsync()
-                        .ContinueWith(downloadResult =>
-                            downloadResult.Result.Value.Content.ToString()
-                    ));
+                    blob.Content);
 
             return post;
         }
