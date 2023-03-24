@@ -24,10 +24,10 @@ public class AzureBlobStoragePostClient : IPostClient
 
     public Task<TResponse<Post>> CreatePost(PostInputs postInputs)
     {
-        string guid = Guid.NewGuid().ToString();
+        Guid guid = Guid.NewGuid();
 
         return blobContainerClient
-            .UploadBlobAsync(guid, new BinaryData(postInputs).ToStream())
+            .UploadBlobAsync(guid.ToString(), new BinaryData(postInputs).ToStream())
             .ContinueWith(t => new Func<Response, TResponse<Post>>(
             r => new(
                     Value: new(
@@ -56,6 +56,7 @@ public class AzureBlobStoragePostClient : IPostClient
     public async Task<TResponse<Post>> PutPost(string key, PostInputs postInputs)
     {
         var client = blobContainerClient.GetBlobClient(key);
+        Guid guid = Guid.NewGuid();
 
         bool exists = await client.ExistsAsync();
 
@@ -64,7 +65,7 @@ public class AzureBlobStoragePostClient : IPostClient
             .ContinueWith(t => new Func<Response, TResponse<Post>>(
                 r => new(
                     Value: new(
-                        guid: key,
+                        guid,
                         isPublished: postInputs.IsPublished,
                         url: blobContainerClient.Uri.ToString() + "/" + postInputs.Name,
                         name: postInputs.Name,
@@ -78,6 +79,8 @@ public class AzureBlobStoragePostClient : IPostClient
     {
         try
         {
+            Guid guid = Guid.Parse(key);
+
             var client = blobContainerClient
                 .GetBlobClient(key);
 
@@ -89,7 +92,7 @@ public class AzureBlobStoragePostClient : IPostClient
                 return null;
 
             var post = (Post?)new Post(
-                    guid: key,
+                    guid,
                     isPublished: blob.IsPublished,
                     client.Uri.ToString(),
                     blob.Name,

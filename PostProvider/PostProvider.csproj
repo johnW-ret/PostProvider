@@ -5,7 +5,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<PackageId>PostProvider</PackageId>
-		<Version>0.1.3</Version>
+		<Version>0.1.4</Version>
 		<Authors>johnW-ret</Authors>
 		<PackageDescription>Provides blog API routes and methods, without needing to be coupled to a specific store.</PackageDescription>
 		<RepositoryUrl>https://github.com/johnW-ret/PostProvider</RepositoryUrl>
