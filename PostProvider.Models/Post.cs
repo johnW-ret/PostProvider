@@ -2,9 +2,9 @@
 
 public record class Post
 {
-    public Post(string guid, bool isPublished, string url, string name, DateTimeOffset createdOn, string content)
+    public Post(Guid guid, bool isPublished, string url, string name, DateTimeOffset createdOn, string content)
     {
-        Guid = Guid.Parse(guid);
+        Guid = guid;
         IsPublished = isPublished;
         Url = url;
         Name = name;
