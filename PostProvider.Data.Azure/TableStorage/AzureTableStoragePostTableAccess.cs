@@ -64,4 +64,20 @@ public class AzureTableStoragePostTableAccess : IPostsTableAccess
             .Select(tableRow => (Row)tableRow)
             .ToList() ?? new List<Row>());
     }
+
+    public Task<TResponse<Row>> PutRow(Row row)
+        => Task.Run(() =>
+        {
+            if (tableClient
+                .QueryAsync<TableRow>(ent => ent.Key == row.Key)
+                .ToBlockingEnumerable()
+                .FirstOrDefault() is not TableRow tableRow)
+                return null;
+
+            return tableClient
+                .UpdateEntityAsync((TableRow)row, ETag.All)
+                .ContinueWith(t => new Func<Response, TResponse<Row>>(
+                    r => new(row, (HttpStatusCode)r.Status))
+                (t.Result));
+        });
 }

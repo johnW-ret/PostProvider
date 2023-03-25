@@ -73,7 +73,7 @@ public static class RouteExtensions
             => await postClient.CreatePost(postInputs) switch
             {
                 ({ Url: not null, Name: string name } newPost, HttpStatusCode.Created)
-                    => await tableAccess.AddRow(new(newPost.Guid.ToString(), postInputs.IsPublished, newPost.Url, name)) switch
+                    => await tableAccess.AddRow(new(newPost.Guid.ToString(), postInputs.IsPublished, name)) switch
                     {
                         (Row row, HttpStatusCode.NoContent) => Results.Created($"/{row.Id}", null),
                         (_, var code) => Results.Problem($"{(int)code} {code}")
@@ -86,15 +86,15 @@ public static class RouteExtensions
                 [FromBody] PostInputs postInputs,
                 IPostsTableAccess tableAccess,
                 IPostClient postClient)
-            => await tableAccess.GetRow(key)
+            => await tableAccess.PutRow(new(key, postInputs.IsPublished, postInputs.Name))
                 switch
                 {
-                    Row row => (await postClient.PutPost(key, postInputs)).StatusCode switch
+                    (Row row, HttpStatusCode.NoContent) => (await postClient.PutPost(key, postInputs)).StatusCode switch
                     {
                         HttpStatusCode.NoContent or HttpStatusCode.Created => Results.NoContent(),
                         var code => Results.Problem($"{(int)code} {code}")
                     },
-                    _ => Results.NotFound()
+                    (_, var code) => Results.Problem($"{(int)code} {code}")
                 });
 
         group.MapDelete("/", async (

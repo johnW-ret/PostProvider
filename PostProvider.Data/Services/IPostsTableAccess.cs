@@ -9,4 +9,5 @@ public interface IPostsTableAccess
     public Task<List<Row>> GetRows(string filter, string? continuationToken);
     public Task<TResponse<Row>> AddRow(Row row);
     public Task<HttpStatusCode> DeleteRow(string key);
+    public Task<TResponse<Row>> PutRow(Row row);
 }
